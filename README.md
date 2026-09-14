@@ -12,7 +12,7 @@
 2. 開啟這個網址安裝腳本：
 
    ```
-   https://raw.githubusercontent.com/oiiiibin-droid/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
+   https://raw.githubusercontent.com/Oiii-bin/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
    ```
 
    或手動：Tampermonkey → 控制台 → 實用工具 → 新增腳本 → 貼上 `poe2-trade-zh-tw.user.js` 內容
@@ -29,9 +29,9 @@
 
 ## 目前版本
 
-- **v4.16**
+- **v4.17**
 - 物品對照 **6831** 條 / 詞綴 TW 資料 **6624** 筆
 
 ## 授權
 
-本專案由 oiiiibin-droid 維護，僅供個人遊玩輔助使用。
+本專案由 Oiii-bin 維護，僅供個人遊玩輔助使用。
