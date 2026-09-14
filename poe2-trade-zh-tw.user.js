@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      4.17
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
-// @author       oiiiibin-droid
+// @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
 // @match        https://pathofexile.com/trade2*
 // @grant        none
