@@ -1,15 +1,15 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version      4.16
+// @version      4.17
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       oiiiibin-droid
 // @match        https://www.pathofexile.com/trade2*
 // @match        https://pathofexile.com/trade2*
 // @grant        none
 // @run-at       document-start
-// @downloadURL  https://raw.githubusercontent.com/oiiiibin-droid/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
-// @updateURL    https://raw.githubusercontent.com/oiiiibin-droid/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
+// @downloadURL  https://raw.githubusercontent.com/Oiii-bin/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
+// @updateURL    https://raw.githubusercontent.com/Oiii-bin/poe2-trade-zh-tw/main/poe2-trade-zh-tw.user.js
 // ==/UserScript==
 
 // ---- 譯名核對狀態 (2026-09-03) ----
@@ -1643,5 +1643,5 @@
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.16：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.17：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
