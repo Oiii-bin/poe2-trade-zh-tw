@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version      4.15
+// @version      4.16
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
-// @author       oiiiibin-droid（物品字典: 放課後 typeTransMap v4.16 + 自製補齊；詞綴資料: pathofexile.tw 當前版）
+// @author       oiiiibin-droid
 // @match        https://www.pathofexile.com/trade2*
 // @match        https://pathofexile.com/trade2*
 // @grant        none
@@ -1643,5 +1643,5 @@
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.15：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.16：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
