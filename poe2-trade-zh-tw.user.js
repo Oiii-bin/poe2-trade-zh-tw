@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version      4.17
+// @version      4.19
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -1041,6 +1041,36 @@
   //   初始化時自動為每個鍵生成全大寫變體：日後新增任一鍵即自動具備大寫匹配能力。
   //   已存在的同名鍵維持原值不被覆蓋；過長鍵（多為物品全名，UI 極少全大寫）略過以控制規模。
   const AUTO_UPPER = new Set();   // 記錄自動生成的變體鍵（反向表需排除）
+  // ✅ v4.19 基底物品 / 靈魂核心 / 碎片「整名」補譯（partial 掃描發現：舊邏輯只翻後綴、漏整名，
+  //   例如 Gladiator Armour 只翻成「Gladiator 護甲」；poe2db.tw/tw/<slug> data-tabname 實證，25 筆）
+  Object.assign(DICT, {
+    "Gladiator Armour": "衛士護甲",
+    "Slayer Armour": "處刑者護甲",
+    "Zenith Vestments": "極盛法衣",
+    "Guardian Greathelm": "守護者巨盔",
+    "Righteous Cuffs": "正義腕帶",
+    "Signet Cuffs": "徽印腕帶",
+    "Phalanx Tower Shield": "方陣塔盾",
+    "Defiant Tower Shield": "忤逆塔盾",
+    "Stoic Crest Shield": "堅忍紋章盾",
+    "Empyreal Crest Shield": "蒼天紋章盾",
+    "Deified Crest Shield": "神化紋章盾",
+    "Tempered Rune": "鍛煉符文",
+    "Greater Tempered Rune": "高階鍛煉符文",
+    "Atziri's Soul Core of Vitality": "阿茲里的活力靈魂核心",
+    "Jiquani's Soul Core of Automation": "吉卡尼的自動化靈魂核心",
+    "Jiquani's Soul Core of Malediction": "吉卡尼的惡語靈魂核心",
+    "Jiquani's Soul Core of Targeting": "吉卡尼的索敵靈魂核心",
+    "Jiquani's Soul Core of Rallying": "吉卡尼的號召靈魂核心",
+    "Jiquani's Soul Core of Radiance": "吉卡尼的輝耀靈魂核心",
+    "Jiquani's Soul Core of Severing": "吉卡尼的斷切靈魂核心",
+    "Jiquani's Soul Core of Rippling": "吉卡尼的漣漪靈魂核心",
+    "Fragment of the Hydra": "九頭蛇斷片",
+    "Fragment of the Chimera": "奇美拉斷片",
+    "Fragment of the Phoenix": "鳳凰斷片",
+    "Fragment of the Minotaur": "牛頭斷片",
+  });
+
   (function expandCaseVariants() {
     const add = {};
     for (const k in DICT) {
@@ -1078,24 +1108,11 @@
     TR_CACHE.set(t, o);
     return o;
   }
-  // v3.7 優化：偵測祖先有 text-transform: uppercase 的標籤（POE2 trade 常用小型大寫），把輸入轉大寫再匹配，
-  //  減少「DOM 實際 Title Case、CSS 顯示大寫」造成的漏翻。未命中時不會把原文改大寫。
-  const UPPER_CACHE = new WeakMap();
-  function hasUpperAncestor(el) {
-    if (!el) return false;
-    let hit = UPPER_CACHE.get(el);
-    if (hit !== undefined) return hit;
-    // 只往上檢查 5 層，避免 getComputedStyle 過重
-    let cur = el, depth = 0;
-    while (cur && cur.nodeType === 1 && depth < 5) {
-      if (cur.style && cur.style.textTransform === 'uppercase') { hit = true; break; }
-      if (typeof getComputedStyle === 'function' && getComputedStyle(cur).textTransform === 'uppercase') { hit = true; break; }
-      cur = cur.parentNode; depth++;
-    }
-    if (hit === undefined) hit = false;
-    UPPER_CACHE.set(el, hit);
-    return hit;
-  }
+  // v3.7 原優化：偵測祖先 text-transform:uppercase → 把輸入轉大寫再匹配，修「DOM 為 Title Case、CSS 顯示大寫」漏翻。
+  // v4.18 重寫：原實作對「每個文字節點」都往上 getComputedStyle 最多 5 層（極慢，是頁面卡頓主因）。
+  //   自 v4.2 起 expandCaseVariants() 已為所有 ≤40 字元鍵自動生成全大寫變體，大寫變體與原鍵同譯，
+  //   故改用「懶惰回退」：原文字翻不出時再試一次全大寫（命中率極高、且只多一次快取查詢，無 getComputedStyle），
+  //   語義不變、速度大增，還能多翻到「DOM 為 Title Case 但僅登錄大寫變體」的詞。→ 移除 hasUpperAncestor。
   // 除錯開關：設為 true 後，F12 Console 會看到 [POE2-ZH] 開頭的漏網英文標籤清單，方便截圖前全面檢測。
   const DEBUG_LOG_UNTRANSLATED = false;
   const UI_CONTAINER_SELECTOR = '.filters,.filter,.search-panel,.query,.trade-panel,.stat-group,.stat-filters,.filter-body';
@@ -1115,10 +1132,13 @@
       const p = node.parentNode;
       if (p && (p.tagName === 'SCRIPT' || p.tagName === 'STYLE')) return;
       const raw = node.nodeValue;
-      const upperMode = hasUpperAncestor(p);
-      const input = upperMode ? raw.toUpperCase() : raw;
-      let n = trText(input);
-      if (upperMode && n === input) n = raw; // 未命中時不要把原文改大寫
+      let n = trText(raw);
+      if (n === raw) {
+        // v4.18 懶惰回退：原文字翻不出，再試一次全大寫（對應 expandCaseVariants 自動生成的大寫變體）。
+        // 只在「沒翻到」時才多跑一次 trText，且結果有快取，幾乎零成本；不再呼叫 getComputedStyle。
+        const up = raw.toUpperCase();
+        if (up !== raw) { const nu = trText(up); if (nu !== up) n = nu; }
+      }
       if (n !== raw) node.nodeValue = n;
       else maybeLogUntranslated(node, n);
     } else if (node.nodeType === 1) {
@@ -1643,5 +1663,5 @@
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.17：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.19：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
