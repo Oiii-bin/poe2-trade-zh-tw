@@ -31,11 +31,12 @@
 
 ## 目前版本
 
-- **v4.20**
-- 物品對照 **6987** 條 / 詞綴 TW 資料 **6624** 筆
+- **v4.21**
+- 物品對照 **6987** 條 / 詞綴 TW 資料 **6799** 筆
 - v4.18：移除每文字節點的 `getComputedStyle` 偵測（改用「翻不出就試一次全大寫」懶惰回退），加快交易站動態內容翻譯。
 - v4.19：掃描發現基底物品只翻後綴漏整名（如 `Gladiator Armour`→`衛士護甲`），補 25 筆整名譯（poe2db.tw 實證）。
 - v4.20：覆蓋率掃描發現 partial 清單藏基底整名缺口（只翻後綴基底型、漏前綴形容詞/專名，如 `Lupine Sceptre`→`兇殘權杖`、`Golden Shield`→`黃金盾牌`），補 53 筆整名譯（poe2db.tw data-tabname 實證）；另 25 筆 fullGap 經實證為 POE1 污染（Scarab / To-the-Goddess / Leaguestone / legacy gem），不補。
+- v4.21：詞綴覆蓋率審計（比對交易站授權詞綴清單 `intl_stats.json`）發現 2333 筆 TWMAP 缺口；其中 175 筆為 fractured / crafted / enchant / augment / desecrated 變體，其底層 `explicit.` / `implicit.` 同文本模板已存在於 TWMAP，直接鏡像補入（同文本保證翻譯正確、無臆測）。其餘 2158 筆（593 explicit + 其變體 + implicit）本機無權威 TW 來源（`tw_stats.json` 僅 5841 筆、不含這些 id），**不臆測翻譯**，待取得 TW 詞綴來源後再補。
 
 ## 授權
 
