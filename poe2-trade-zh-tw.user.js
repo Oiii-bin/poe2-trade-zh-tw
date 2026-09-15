@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version      4.19
+// @version      4.20
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -1071,6 +1071,66 @@
     "Fragment of the Minotaur": "牛頭斷片",
   });
 
+  // ✅ v4.20 基底/護符/符文/靈魂核心/武器/寶石「整名」補譯（全面覆蓋率掃描 partial 清單發現：
+  //   舊邏輯只翻後綴基底型、漏前綴形容詞/專名，如 Lupine Sceptre→Lupine 權杖、Golden Shield→Golden 盾牌；
+  //   poe2db.tw data-tabname 實證整名後補入。53 筆皆 POE2 交易物（基底型已可翻，證明物品在 POE2 交易系統）；
+  //   另 25 筆 fullGap 經 poe2db /tw/ 實證為 POE1 污染（Scarab/To-the-Goddess/Leaguestone/legacy gem），不補。
+  Object.assign(DICT, {
+    "Lesser Tempered Rune": "低階鍛煉符文",
+    "Cleansing Charm": "淨化護符",
+    "Gilded Expedition Scarab": "聖甲蟲：鍍金探險",
+    "Winged Expedition Scarab": "聖甲蟲：展翅探險",
+    "Jiquani's Soul Core of Quaking": "吉卡尼的震顫靈魂核心",
+    "Jiquani's Soul Core of Munitions": "吉卡尼的彈藥靈魂核心",
+    "Jiquani's Soul Core of Snares": "吉卡尼的陷阱靈魂核心",
+    "Jiquani's Soul Core of Abundance": "吉卡尼的豐饒靈魂核心",
+    "Jiquani's Soul Core of Squalls": "吉卡尼的狂風靈魂核心",
+    "Jiquani's Soul Core of Thundering": "吉卡尼的雷鳴靈魂核心",
+    "Atziri's Soul Core of Devotion": "阿茲里的奉獻靈魂核心",
+    "Atziri's Soul Core of Alacrity": "阿茲里的敏捷靈魂核心",
+    "Atziri's Soul Core of Inoculation": "阿茲里的免疫靈魂核心",
+    "Double Limb Bow": "雙肢弓",
+    "Cumbrous Crossbow": "笨重十字弓",
+    "Dedalian Crossbow": "精巧十字弓",
+    "Esoteric Crossbow": "秘傳十字弓",
+    "Anima Quarterstaff": "靈魂細杖",
+    "Graceful Quarterstaff": "優雅細杖",
+    "Crude Claw": "簡陋爪",
+    "Pict Claw": "皮克特爪",
+    "Wolfbone Claw": "狼骨爪",
+    "Forked Claw": "叉狀爪",
+    "Plated Claw": "華麗爪",
+    "Edged Claw": "鋒利爪",
+    "Arced Claw": "弧形爪",
+    "Hooked Claw": "鉤爪",
+    "Razorglass Claw": "剃刀玻璃爪",
+    "Sharktooth Claw": "鯊顎爪",
+    "Armoured Claw": "裝甲爪",
+    "Talon Claw": "猛禽爪",
+    "Lupine Sceptre": "兇殘權杖",
+    "Ochre Sceptre": "赤色權杖",
+    "Devouring Sceptre": "吞噬權杖",
+    "Clasped Sceptre": "握扣權杖",
+    "Devotional Sceptre": "虔誠權杖",
+    "Aromatic Sceptre": "芳香權杖",
+    "Pious Sceptre": "敬神權杖",
+    "Hallowed Sceptre": "聖潔權杖",
+    "Spriggan Staff": "狡詐長杖",
+    "Rending Staff": "撕裂長杖",
+    "Dark Staff": "黑暗長杖",
+    "Offering Wand": "奉獻法杖",
+    "Frigid Wand": "冰冷法杖",
+    "Torture Wand": "暴虐法杖",
+    "Primordial Wand": "原始法杖",
+    "Golden Shield": "黃金盾牌",
+    "Aegis Buckler": "神禦輕盾",
+    "Leatherplate Boots": "皮甲長靴",
+    "Embroidered Boots": "刺繡長靴",
+    "Adorned Gloves": "奢華手套",
+    "Mirror of Refraction": "鏡面折射",
+    "Relentless Rage": "無盡怒火",
+  });
+
   (function expandCaseVariants() {
     const add = {};
     for (const k in DICT) {
@@ -1663,5 +1723,5 @@
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.19：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.20：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
