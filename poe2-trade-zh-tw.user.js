@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.22
+// @version 4.23
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -801,6 +801,16 @@
     "rune.stat_2438634449": "你的攻擊暴擊時，有#%機率加劇目標身上的流血",
     "rune.stat_2443032293": "使用技能時每消耗一個連擊可獲得#守護，持續0.5秒",
   });
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.23 自動鏡像（4 筆）：由 GGG 線上 EN 資料比對發現的新變體，
+    //   底層 explicit/implicit 同文本模板已存在於 TWMAP（GGG 官方 TW 翻譯），直接鏡像，零臆測。
+    //   剩餘無 TW 來源者見 pending_tw_gaps.json。
+    "rune.stat_3791899485": "增加#%點燃幅度",
+    "rune.stat_4081947835": "投射物有#%機率從地形額外連鎖一次",
+    "rune.stat_2527686725": "增加#%你所施加之感電的幅度",
+    "rune.stat_1992191903": "#所有印記技能等級",
+  });
+
 
 
   // ===== A. 物品/介面 文字替換（MutationObserver 監聽動態內容）=====
@@ -2438,5 +2448,5 @@
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.22：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.23：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
