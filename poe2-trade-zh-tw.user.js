@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.23
+// @version 4.25
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -818,7 +818,35 @@
   // GGG 在屬性名會夾標記：[Mace|One Hand Mace] -> 顯示 "One Hand Mace"；[Physical] Damage -> "Physical Damage"
   // 這些字串出現在搜尋結果的 item.properties[].name / requirements[].name，
   // 一律先清標記再對照；同時併入 DICT 讓 DOM 走查也能兜住。
-  const PROP = {
+    Object.assign(TWMAP, {
+    // —— 週例行同步 2026-09-21 (pathofexile.tw /data/stats，新增 12 / 覆寫 5) ——
+    "crafted.stat_2954116742|2745": "配置高貴之狼",
+    "crafted.stat_2954116742|43939": "配置融化烈焰",
+    "crafted.stat_2954116742|65023": "配置無敵甲殼",
+    "desecrated.stat_3514984677": "增加#%變動魔力詞綴的大小",
+    "explicit.stat_2954116742|2745": "配置高貴之狼",
+    "explicit.stat_2954116742|43939": "配置融化烈焰",
+    "explicit.stat_2954116742|65023": "配置無敵甲殼",
+    "explicit.stat_3514984677": "增加#%變動魔力詞綴的大小",
+    "rune.stat_138373935": "每一裝備的已汙染物品#%混沌抗性",
+    "rune.stat_2203195791": "每裝備一件已汙染物品，即增加#%技能速度",
+    "rune.stat_2296009672": "#全部植物技能寶石等級",
+    "rune.stat_2305301734": "#全部風暴技能寶石等級",
+    "crafted.stat_541021467": "若你的天賦樹中鑲嵌了一顆綠寶石和藍寶石，擊中時虛弱敵人",
+    "explicit.stat_2852112245": "地圖中的探險含有1個瓦爾遺物",
+    "explicit.stat_3039133122": "增加#%地圖中探險炸藥的範圍效果",
+    "explicit.stat_3598729471": "你只能在這件物品上鑲嵌綠寶石",
+    "explicit.stat_541021467": "若你的天賦樹中鑲嵌了一顆綠寶石和藍寶石，擊中時虛弱敵人",
+  });
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.25 自動鏡像（1 筆）：由 GGG 線上 EN 資料比對發現的新變體，
+    //   底層 explicit/implicit 同文本模板已存在於 TWMAP（GGG 官方 TW 翻譯），直接鏡像，零臆測。
+    //   剩餘無 TW 來源者見 pending_tw_gaps.json。
+    "fractured.stat_2954116742|24062": "配置不朽惡名",
+  });
+
+
+const PROP = {
     // 臺服譯名來源：pathofexile.tw 即時抓取 markup([內部鍵|臺服顯示]) + tw_items.json 基底命名
     //   ★ = 臺服即時抓取確認   ▲ = tw_items.json 基底名推導   ◇ = 通用臺服術語(高信心)
     // 武器類別  ★[Wand|法杖][Staff|長杖][Jewel|珠寶]  ▲十字弓/弓/斧/錘/劍/盾/權杖/長棍/長矛/匕首/爪  ◇戰杖/細劍/連枷
