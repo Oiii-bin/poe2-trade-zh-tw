@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.27
+// @version 4.28
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -867,6 +867,13 @@
     "rune.stat_3985867204": "增加#%釘身持續時間",
     "desecrated.stat_4259875040": "增加#%法術所造成之穿刺的幅度",
   });
+
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.28 變體詞綴安全鏡像（1 筆）
+    //   底層 explicit/implicit 同文本模板已存在於 TWMAP，直接鏡像，零臆測。
+    "crafted.stat_4259875040": "增加#%法術所造成之穿刺的幅度",
+  });
+
 
 
 
@@ -2500,5 +2507,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.27：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.28：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
