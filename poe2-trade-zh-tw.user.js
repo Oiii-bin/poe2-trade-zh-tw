@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.26
+// @version 4.27
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -852,6 +852,22 @@
     //   "#% increased Explicit Mana Modifier magnitudes" → 同文本保證翻譯正確。
     "fractured.stat_3514984677": "增加#%變動魔力詞綴的大小",
   });
+
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.27 詞綴自動同步（10 筆）
+    //   來源：pathofexile.tw /api/trade2/data/stats，靠 stat id 對齊，臺服權威譯名，零臆測。
+    "explicit.stat_4259875040": "增加#%法術所造成之穿刺的幅度",
+    "explicit.stat_2954116742|51602": "配置隱蔽",
+    "explicit.stat_2954116742|56666": "配置奇術發動機",
+    "explicit.stat_2954116742|61309": "配置紅刃紀律",
+    "implicit.stat_1451444093": "暴擊擊中會二分",
+    "crafted.stat_2954116742|61309": "配置紅刃紀律",
+    "crafted.stat_2954116742|56666": "配置奇術發動機",
+    "crafted.stat_2954116742|51602": "配置隱蔽",
+    "rune.stat_3985867204": "增加#%釘身持續時間",
+    "desecrated.stat_4259875040": "增加#%法術所造成之穿刺的幅度",
+  });
+
 
 
 const PROP = {
@@ -2484,5 +2500,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.26：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.27：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();

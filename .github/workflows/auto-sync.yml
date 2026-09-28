@@ -1,0 +1,41 @@
+name: auto-sync
+
+on:
+  schedule:
+    - cron: '23 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Run auto sync
+        run: node scripts/auto_sync.js
+
+      - name: Commit and push if changed
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "沒有變更，略過提交"
+            exit 0
+          fi
+          git config user.name "Oiii-bin"
+          git config user.email "329207111+Oiii-bin@users.noreply.github.com"
+          git add -A
+          VER=$(grep -m1 '@version' poe2-trade-zh-tw.user.js | tr -d '\r' | sed 's/.*@version //')
+          git commit -m "auto-sync: v$VER"
+          git push
