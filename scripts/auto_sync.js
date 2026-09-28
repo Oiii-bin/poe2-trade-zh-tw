@@ -4,12 +4,19 @@
 // 用法：node scripts/auto_sync.js        （在倉庫根目錄執行）
 // 行為：有新增才改檔 + bump 版本；沒新增就原樣結束（讓 workflow 不產生空 commit）。
 //
-// 可靠來源（靠 entry id 對齊，100% 可對齊才用）：
-//   1. 詞綴：GGG EN /data/stats + 臺服 TW /data/stats → id 完全一致
-//   2. 物品：GGG EN /data/static + 臺服 TW /data/static → id 完全一致（通貨/符文/精髓/換界石…）
-//   3. 變體詞綴安全鏡像：底層 explicit/implicit 模板已存在且 EN 文本相同才鏡像
-// 硬規則：不臆測。沒有權威臺服譯名的一律不補，只寫入 pending_tw_gaps.json。
-//   ⚠ /data/items（armour/weapon/accessory/gem/map）兩邊數量不相等，索引配對不安全 → 不用。
+// 可靠來源（全部「有權威譯名才補」，靠 id/slug 對齊，零臆測）：
+//   1. 詞綴：GGG EN /data/stats + 臺服 TW /data/stats → entry id 完全一致
+//   2. 物品：GGG EN /data/static + 臺服 TW /data/static → entry id 完全一致（通貨/符文/精髓/換界石…）
+//   3. 分類標籤：上述端點 + /data/items 的 group id 對齊 EN/TW label（Accessories→飾品…）
+//   4. 傳奇名：poe2db.tw 英文版 /us/Unique_item + 臺服 /tw/Unique_item → 靠 slug 配對
+//      （官方端點抓不到傳奇：無 /data/uniques，/data/items 只有基底類型）
+//   5. 變體詞綴安全鏡像：底層 explicit/implicit 模板已存在且 EN 文本相同
+//
+// 硬規則：
+//   - 不臆測。沒有權威譯名的一律不補，只寫入 pending_tw_gaps.json。
+//   - ⚠ /data/items 的 entry 沒有 id 且 EN/TW 數量不等 → 只能用 group label，絕不做 entry 索引配對。
+//   - 官方來源抓不到 → exit 1（讓 GitHub 寄信告警，避免綠燈空轉）；
+//     poe2db 為社群來源，抓不到只警告、不阻擋。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -26,6 +33,7 @@ const H = {
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
   Accept: 'application/json',
 };
+const H_HTML = { ...H, Accept: 'text/html' };
 
 async function getJSON(u) {
   for (let i = 0; i < 5; i++) {
@@ -41,6 +49,17 @@ async function getJSON(u) {
   throw new Error('無法取得 ' + u);
 }
 
+async function getText(u) {
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(u, { headers: H_HTML, signal: AbortSignal.timeout(60000) });
+      if (r.ok) return await r.text();
+    } catch (e) {}
+    await new Promise((s) => setTimeout(s, 3000));
+  }
+  throw new Error('無法取得 ' + u);
+}
+
 function sliceBalanced(src, startIdx) {
   let i = src.indexOf('{', startIdx), d = 0, e = -1;
   for (; i < src.length; i++) {
@@ -51,7 +70,7 @@ function sliceBalanced(src, startIdx) {
   return e;
 }
 
-// 完整解析：基礎字面量 + 全部 Object.assign 增量（勿只讀基礎字面量，會重複補已補過的）
+// 完整解析：基礎字面量 + 全部 Object.assign 增量（勿只讀基礎字面量）
 function parseFull(name) {
   const s0 = ORIG.indexOf('const ' + name + ' = {');
   if (s0 < 0) throw new Error('找不到 const ' + name);
@@ -108,24 +127,36 @@ function bumpVersion(v) {
   return parts.join('.');
 }
 
+// 從 poe2db 列表頁抓 uniqueName（slug → 名稱）
+function parseUniqueNames(html, loc) {
+  const out = {};
+  const re = new RegExp('href="/' + loc + '/([^"]+)"[^>]*><span class="uniqueName">([^<]{1,60})</span>', 'g');
+  let m;
+  while ((m = re.exec(html))) out[m[1]] = m[2].trim();
+  return out;
+}
+
 (async () => {
   console.log('=== POE2 繁中腳本 雲端自動同步 ===');
   const TWMAP = parseFull('TWMAP');
   const DICT = parseFull('DICT');
   console.log('現有完整 TWMAP: ' + Object.keys(TWMAP).length + ' / DICT: ' + Object.keys(DICT).length);
 
-  let enStats, twStats, enStatic, twStatic;
+  let enStats, twStats, enStatic, twStatic, enItems, twItems;
   try {
-    console.log('抓取資料中…');
-    [enStats, twStats, enStatic, twStatic] = await Promise.all([
+    console.log('抓取官方來源…');
+    [enStats, twStats, enStatic, twStatic, enItems, twItems] = await Promise.all([
       getJSON('https://www.pathofexile.com/api/trade2/data/stats'),
       getJSON('https://www.pathofexile.tw/api/trade2/data/stats'),
       getJSON('https://www.pathofexile.com/api/trade2/data/static'),
       getJSON('https://www.pathofexile.tw/api/trade2/data/static'),
+      getJSON('https://www.pathofexile.com/api/trade2/data/items'),
+      getJSON('https://www.pathofexile.tw/api/trade2/data/items'),
     ]);
   } catch (e) {
-    console.log('⚠ 取不到來源資料，本次略過（不視為失敗）：' + e.message);
-    process.exit(0);
+    // 官方來源抓不到 = 真的出事了（GGG 可能開始封鎖 CI IP）→ 轉紅告警，不可靜默略過
+    console.error('❌ 官方來源取得失敗：' + e.message);
+    process.exit(1);
   }
 
   const flat = (j) => { const o = {}; for (const g of j.result || []) for (const e of g.entries || []) if (e.id && e.text) o[e.id] = e.text; return o; };
@@ -134,39 +165,72 @@ function bumpVersion(v) {
   console.log('來源：GGG EN 詞綴 ' + Object.keys(EN_STATS).length + ' / 臺服詞綴 ' + Object.keys(TW_STATS).length +
     ' / EN static ' + Object.keys(EN_STATIC).length + ' / TW static ' + Object.keys(TW_STATIC).length);
 
-  // (1) 詞綴：臺服有譯名、TWMAP 還沒收 → 直接收錄（權威，零臆測）
+  // (1) 詞綴：臺服有譯名、TWMAP 還沒收
   const newAffix = Object.keys(TW_STATS).filter((id) => !TWMAP[id]).map((id) => [id, TW_STATS[id]]);
 
-  // (2) 變體詞綴安全鏡像：底層 explicit/implicit 模板已存在且 EN 文本相同
+  // (2) 變體詞綴安全鏡像
   const PREFIX = /^(fractured|crafted|enchant|augment|desecrated|rune)\.(stat_\d+)/;
   const mirrored = [];
   for (const id of Object.keys(EN_STATS)) {
     if (TWMAP[id]) continue;
     const m = id.match(PREFIX);
     if (!m) continue;
-    const base = 'explicit.' + m[2];
-    const base2 = 'implicit.' + m[2];
-    const b = TWMAP[base] ? base : (TWMAP[base2] ? base2 : null);
+    const b = TWMAP['explicit.' + m[2]] ? 'explicit.' + m[2] : (TWMAP['implicit.' + m[2]] ? 'implicit.' + m[2] : null);
     if (!b) continue;
     if (EN_STATS[id] === EN_STATS[b]) mirrored.push([id, TWMAP[b]]);
   }
 
-  // (3) 物品名：static 靠 id 對齊（兩邊 id 一致才收）
+  // (3) 物品名：static 靠 entry id 對齊
   const newItem = [];
   for (const id of Object.keys(EN_STATIC)) {
     const en = EN_STATIC[id], tw = TW_STATIC[id];
-    if (!tw || !en) continue;
-    if (DICT[en]) continue;
-    if (tw === en) continue;
+    if (!tw || !en || tw === en || DICT[en]) continue;
     newItem.push([en, tw]);
+  }
+
+  // (4) 分類標籤：group id 對齊（/data/stats、/data/static、/data/items 的 label）
+  const seenLabel = new Set();
+  const newLabel = [];
+  for (const [enResp, twResp] of [[enStats, twStats], [enStatic, twStatic], [enItems, twItems]]) {
+    const enG = {}, twG = {};
+    for (const g of enResp.result || []) if (g.id && g.label) enG[g.id] = g.label;
+    for (const g of twResp.result || []) if (g.id && g.label) twG[g.id] = g.label;
+    for (const id of Object.keys(enG)) {
+      const en = enG[id], tw = twG[id];
+      if (!tw || tw === en || DICT[en] || seenLabel.has(en)) continue;
+      seenLabel.add(en);
+      newLabel.push([en, tw]);
+    }
+  }
+
+  // (5) 傳奇名：poe2db 英文版 + 臺服版，靠 slug 配對（社群來源，失敗只警告）
+  let newUnique = [];
+  try {
+    const usHtml = await getText('https://poe2db.tw/us/Unique_item');
+    const twHtml = await getText('https://poe2db.tw/tw/Unique_item');
+    const EN_U = parseUniqueNames(usHtml, 'us');
+    const TW_U = parseUniqueNames(twHtml, 'tw');
+    const common = Object.keys(EN_U).filter((s) => TW_U[s]);
+    console.log('poe2db 傳奇：EN ' + Object.keys(EN_U).length + ' / TW ' + Object.keys(TW_U).length + ' / 可配對 ' + common.length);
+    const seenU = new Set();
+    for (const s of common) {
+      const en = EN_U[s], tw = TW_U[s];
+      if (!en || !tw || tw === en || DICT[en] || seenU.has(en)) continue;
+      seenU.add(en);
+      newUnique.push([en, tw]);
+    }
+  } catch (e) {
+    console.log('⚠ poe2db 取得失敗（社群來源，不阻擋）：' + e.message);
   }
 
   console.log('--- 增量 ---');
   console.log('  詞綴(臺服權威譯名) ' + newAffix.length + ' 筆');
   console.log('  變體安全鏡像      ' + mirrored.length + ' 筆');
   console.log('  物品名(static)    ' + newItem.length + ' 筆');
+  console.log('  分類標籤(group)   ' + newLabel.length + ' 筆');
+  console.log('  傳奇名(poe2db)    ' + newUnique.length + ' 筆');
 
-  // 記錄天花板缺口（GGG 有、臺服沒翻 → 不臆測）
+  // 天花板缺口（GGG 有、臺服沒翻 → 不臆測）
   const gapIds = Object.keys(EN_STATS).filter((id) => !TW_STATS[id] && !TWMAP[id]);
   let prevGap = { items: [] };
   try { prevGap = JSON.parse(fs.readFileSync(GAPS, 'utf8')); } catch (e) {}
@@ -176,26 +240,22 @@ function bumpVersion(v) {
     console.log('  天花板缺口(臺服未翻，不補) ' + gapIds.length + ' 筆 → pending_tw_gaps.json 已更新');
   }
 
-  const total = newAffix.length + mirrored.length + newItem.length;
+  const total = newAffix.length + mirrored.length + newItem.length + newLabel.length + newUnique.length;
   if (total === 0 && !gapChanged) {
     console.log('✅ 沒有可補的新內容，結束（不產生 commit）');
     process.exit(0);
-  }
-  if (total === 0) {
-    console.log('✅ 沒有可補的新內容（僅更新缺口清單）');
   }
 
   // ---- 注入 ----
   const curVer = (ORIG.match(/\/\/ @version ([\d.]+)/) || [])[1];
   const newVer = bumpVersion(curVer || '4.26');
   let code = ORIG;
-  const stamp = new Date().toISOString().slice(0, 10);
   const tag = 'v' + newVer;
 
   if (newAffix.length) {
     code = injectAfterLastAssign(code, 'TWMAP', blockFor('TWMAP',
       '// 🤖 AUTO ' + tag + ' 詞綴自動同步（' + newAffix.length + ' 筆）\n' +
-      '//   來源：pathofexile.tw /api/trade2/data/stats，靠 stat id 對齊，臺服權威譯名，零臆測。',
+      '//   來源：pathofexile.tw /api/trade2/data/stats，stat id 對齊，臺服權威譯名，零臆測。',
       newAffix));
   }
   if (mirrored.length) {
@@ -207,11 +267,22 @@ function bumpVersion(v) {
   if (newItem.length) {
     code = injectAfterLastAssign(code, 'DICT', blockFor('DICT',
       '// 🤖 AUTO ' + tag + ' 物品名自動同步（' + newItem.length + ' 筆）\n' +
-      '//   來源：pathofexile.tw /api/trade2/data/static，靠 entry id 對齊，臺服權威譯名，零臆測。',
+      '//   來源：pathofexile.tw /api/trade2/data/static，entry id 對齊，臺服權威譯名。',
       newItem));
   }
+  if (newLabel.length) {
+    code = injectAfterLastAssign(code, 'DICT', blockFor('DICT',
+      '// 🤖 AUTO ' + tag + ' 分類標籤自動同步（' + newLabel.length + ' 筆）\n' +
+      '//   來源：trade2 /data/stats、/data/static、/data/items 的 group id 對齊 EN/TW label。',
+      newLabel));
+  }
+  if (newUnique.length) {
+    code = injectAfterLastAssign(code, 'DICT', blockFor('DICT',
+      '// 🤖 AUTO ' + tag + ' 傳奇名自動同步（' + newUnique.length + ' 筆）\n' +
+      '//   來源：poe2db.tw /us/Unique_item 與 /tw/Unique_item，靠 slug 配對（官方端點無傳奇資料）。',
+      newUnique));
+  }
 
-  // ---- bump 版本 ----
   code = code.replace(/\/\/ @version [\d.]+/, '// @version ' + newVer);
   code = code.replace(/啟動 v[\d.]+/, '啟動 ' + tag);
 
@@ -239,10 +310,9 @@ function bumpVersion(v) {
   if (!ok) {
     console.log('❌ 驗證未通過：');
     const lines = out.split('\n');
-    const fails = lines.filter((l) => l.startsWith('FAIL'));
-    console.log(fails.slice(0, 15).join('\n') || lines.slice(-40).join('\n'));
+    console.log(lines.filter((l) => l.startsWith('FAIL')).slice(0, 15).join('\n') || lines.slice(-40).join('\n'));
     if (process.env.AUTO_SYNC_KEEP) {
-      console.log('（AUTO_SYNC_KEEP=1：保留改動供除錯，不還原）');
+      console.log('（AUTO_SYNC_KEEP=1：保留改動供除錯）');
     } else {
       fs.writeFileSync(SCRIPT, ORIG);
       if (ORIG_VERIFY) fs.writeFileSync(VERIFIER, ORIG_VERIFY);

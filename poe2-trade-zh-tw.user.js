@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.28
+// @version 4.29
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -1915,6 +1915,35 @@ const PROP = {
     "Relentless Rage": "無盡怒火",
   });
 
+  Object.assign(DICT, {
+    // 🤖 AUTO v4.29 分類標籤自動同步（10 筆）
+    //   來源：trade2 /data/stats、/data/static、/data/items 的 group id 對齊 EN/TW label。
+    "Pseudo": "偽屬性",
+    "Explicit": "隨機屬性",
+    "Implicit": "固性屬性",
+    "Enchant": "附魔",
+    "Augment": "增幅",
+    "Skill": "技能",
+    "Runes": "符文",
+    "Waystones": "換界石",
+    "Flasks": "藥劑",
+    "Maps": "地圖",
+  });
+
+  Object.assign(DICT, {
+    // 🤖 AUTO v4.29 傳奇名自動同步（7 筆）
+    //   來源：poe2db.tw /us/Unique_item 與 /tw/Unique_item，靠 slug 配對（官方端點無傳奇資料）。
+    "Splinter of Lorrata": "蘿拉塔裂片",
+    "Guiding Palm of the Heart": "引導之掌：心",
+    "Guiding Palm of the Eye": "引導之掌：眼",
+    "Guiding Palm of the Mind": "引導之掌：靈",
+    "Hysseg's Claw": "希塞格之爪",
+    "Lavianga's Spirits": "拉維安加之泉",
+    "Mastered Domain": "主宰領地",
+  });
+
+
+
   (function expandCaseVariants() {
     const add = {};
     for (const k in DICT) {
@@ -2507,5 +2536,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.28：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.29：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();

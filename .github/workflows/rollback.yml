@@ -1,0 +1,36 @@
+name: rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 要還原到的 commit sha（好的那一版）
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Restore and bump version
+        run: node scripts/rollback.js ${{ github.event.inputs.sha }}
+
+      - name: Commit and push
+        run: |
+          git config user.name "Oiii-bin"
+          git config user.email "329207111+Oiii-bin@users.noreply.github.com"
+          git add -A
+          git commit -m "rollback to ${{ github.event.inputs.sha }}"
+          git push

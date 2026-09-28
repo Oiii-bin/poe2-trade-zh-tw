@@ -100,7 +100,7 @@ check('腳本載入無例外', !loadErr, loadErr ? String(loadErr) : 'OK');
 const startLog = logs.find(l => l.includes('啟動'));
 check('印出啟動日誌', !!startLog, startLog || '缺少啟動日誌');
 const m = startLog && startLog.match(/物品對照 (\d+) 條 \/ 詞綴 TW 資料 (\d+) 筆/);
-check('DICT 數量=6987 (v4.20 +53 基底/護符/符文/靈魂核心/武器/寶石整名補譯 +53 自動大寫變體；以啟動日誌實測值為準、禁手算)', m && m[1] === '6987', m ? 'DICT=' + m[1] : '未解析');
+check('DICT 數量=7021 (v4.20 +53 基底/護符/符文/靈魂核心/武器/寶石整名補譯 +53 自動大寫變體；以啟動日誌實測值為準、禁手算)', m && m[1] === '7021', m ? 'DICT=' + m[1] : '未解析');
 check('TWMAP 數量=7356 (v4.21 +175 筆 + v4.22 +528 筆 = 703 筆 fractured/crafted/enchant/rune/desecrated 變體鏡像；v4.24 週同步 +12 筆；v4.26 +1 筆安全鏡像；以啟動日誌實測值為準、禁手算)', m && m[2] === '7356', m ? 'TWMAP=' + m[2] : '未解析');
 
 // (3) 詞綴資料層攔截改寫
