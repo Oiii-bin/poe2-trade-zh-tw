@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.30
+// @version 4.31
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -24,6 +24,14 @@
 //    本地 dump 配對 Vaal Cultivation Orb->瓦爾栽培寶珠(栽培) / Omen of Sanctification->聖化之兆(聖化) / * Reload->*裝填；
 //    TWMAP 慣例 Fractured->破裂 / Desecrated->褻瀆 / Unrevealed->未揭露 / Crafted->工藝；武器類別 One-Handed/Two-Handed/Melee/Unarmed
 //    以組合詞覆蓋（單手劍/雙手斧/任意雙手近戰武器…）；其餘 UI 欄位 Damage->傷害、Chance->機率、Stack Size->堆疊數量 等通用術語。
+// ✅ v4.31 全站 UI 文案系統性掃描補漏（權威＝臺服官方 data 端點，免登入）：
+//    餵進真實 trText 管線量化後，194 條官方文案中僅剩 8 條翻不動，全數補齊：
+//    [聯盟選擇器 /api/trade2/data/leagues 順序對齊] Forbidden Rites->禁忌儀式、
+//    HC Forbidden Rites->禁忌儀式 專家模式、Standard->標準模式、Hardcore->專家模式；
+//    [最後通牒篩選 /api/trade2/data/filters ultimatum_hint] Ultimatum Trial Hint->最後通牒試煉提示、
+//    Victorious->勝利 / Cowardly->怯懦 / Deadly->致命。
+//    ⚠ 未補：SPA 外殼字串（按鈕/Verified 徽章/結果列相對時間）—— 國際服 HTML 被 Cloudflare 擋（403 挑戰頁）、
+//    臺服交易站需登入，皆無權威文案可證，依硬規則不臆測（抓漏方法見 DEBUG_LOG_UNTRANSLATED 開關）。
 // ✅ v4.30 上架時間下拉 + placeholder 屬性翻譯（截圖 2026-09-28 回報）：
 //    「Up to an Hour Ago」等 9 個時間選項全漏翻 —— 權威來源＝臺服官方 /api/trade2/data/filters
 //    （indexed 欄位，免登入可抓）：Any Time->任何時間（原「任意時間」非官方用語，已對齊）、
@@ -1041,6 +1049,18 @@ const PROP = {
     "Up to 2 Weeks Ago": "至多 2 個禮拜前",
     "Up to 1 Month Ago": "至多 1 個月前",
     "Up to 2 Months Ago": "至多 2 個月前",
+    // ✅ v4.31 聯盟選擇器（臺服官方 /api/trade2/data/leagues，兩端各 6 筆順序對齊）
+    "Forbidden Rites": "禁忌儀式",
+    "HC Forbidden Rites": "禁忌儀式 專家模式",
+    "Runes of Aldur": "阿德爾的符文",
+    "HC Runes of Aldur": "阿德爾的符文 專家模式",
+    "Standard": "標準模式",
+    "Hardcore": "專家模式",
+    // ✅ v4.31 最後通牒篩選（臺服官方 /api/trade2/data/filters → ultimatum_hint）
+    "Ultimatum Trial Hint": "最後通牒試煉提示",
+    "Victorious": "勝利",
+    "Cowardly": "怯懦",
+    "Deadly": "致命",
     "Sale Type": "販售類型", "SALE TYPE": "販售類型", "Sale": "販售", "SALE": "販售",
     "Buyout or Fixed Price": "一口價或定價", "BUYOUT OR FIXED PRICE": "一口價或定價",
     "Gold Fee": "金幣費用", "GOLD FEE": "金幣費用", "Gold": "金幣", "GOLD": "金幣",
@@ -2574,5 +2594,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.30：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.31：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();

@@ -102,7 +102,7 @@ check('印出啟動日誌', !!startLog, startLog || '缺少啟動日誌');
 const m = startLog && startLog.match(/啟動 v([\d.]+)：物品對照 (\d+) 條 \/ 詞綴 TW 資料 (\d+) 筆/);
 const HDR_VER = (code.match(/@version ([\d.]+)/) || [])[1];
 check('啟動日誌版本號 = header @version（防人工 bump 漏改日誌）', m && m[1] === HDR_VER, 'log=' + (m && m[1]) + ' header=' + HDR_VER);
-check('DICT 數量=7039 (v4.30 +9 上架時間選項 ×Title/大寫雙鍵；以啟動日誌實測值為準、禁手算)', m && m[2] === '7039', m ? 'DICT=' + m[2] : '未解析');
+check('DICT 數量=7059 (v4.30 +9 上架時間選項、v4.31 +10 聯盟名/最後通牒篩選，各 ×Title/大寫雙鍵；以啟動日誌實測值為準、禁手算)', m && m[2] === '7059', m ? 'DICT=' + m[2] : '未解析');
 check('TWMAP 數量=7356 (v4.21 +175 筆 + v4.22 +528 筆 = 703 筆 fractured/crafted/enchant/rune/desecrated 變體鏡像；v4.24 週同步 +12 筆；v4.26 +1 筆安全鏡像；以啟動日誌實測值為準、禁手算)', m && m[3] === '7356', m ? 'TWMAP=' + m[3] : '未解析');
 
 // (3) 詞綴資料層攔截改寫
@@ -242,6 +242,24 @@ check('TWMAP 數量=7356 (v4.21 +175 筆 + v4.22 +528 筆 = 703 筆 fractured/cr
     check('v4.30 時間選項: UP TO A WEEK AGO -> 至多 1 個禮拜前', t3.nodeValue === '至多 1 個禮拜前', 'got=' + t3.nodeValue);
     check('v4.30 時間選項: Up to 2 Months Ago -> 至多 2 個月前', t4.nodeValue === '至多 2 個月前', 'got=' + t4.nodeValue);
     check('v4.30 時間選項: Any Time -> 任何時間（Title Case 鍵）', t5.nodeValue === '任何時間', 'got=' + t5.nodeValue);
+    // v4.31 聯盟選擇器 + 最後通牒篩選（臺服官方 data/leagues、data/filters 權威文案）
+    const g1 = textNode('Forbidden Rites');
+    const g2 = textNode('HC Forbidden Rites');
+    const g3 = textNode('STANDARD');
+    const g4 = textNode('Hardcore');
+    const g5 = textNode('Ultimatum Trial Hint');
+    const g6 = textNode('VICTORIOUS');
+    const g7 = textNode('Cowardly');
+    const g8 = textNode('Deadly');
+    moCallback([{ addedNodes: [g1, g2, g3, g4, g5, g6, g7, g8] }]);
+    check('v4.31 聯盟: Forbidden Rites -> 禁忌儀式', g1.nodeValue === '禁忌儀式', 'got=' + g1.nodeValue);
+    check('v4.31 聯盟: HC Forbidden Rites -> 禁忌儀式 專家模式', g2.nodeValue === '禁忌儀式 專家模式', 'got=' + g2.nodeValue);
+    check('v4.31 聯盟: STANDARD -> 標準模式（大寫變體）', g3.nodeValue === '標準模式', 'got=' + g3.nodeValue);
+    check('v4.31 聯盟: Hardcore -> 專家模式', g4.nodeValue === '專家模式', 'got=' + g4.nodeValue);
+    check('v4.31 最後通牒: Ultimatum Trial Hint -> 最後通牒試煉提示', g5.nodeValue === '最後通牒試煉提示', 'got=' + g5.nodeValue);
+    check('v4.31 最後通牒: VICTORIOUS -> 勝利', g6.nodeValue === '勝利', 'got=' + g6.nodeValue);
+    check('v4.31 最後通牒: Cowardly -> 怯懦', g7.nodeValue === '怯懦', 'got=' + g7.nodeValue);
+    check('v4.31 最後通牒: Deadly -> 致命', g8.nodeValue === '致命', 'got=' + g8.nodeValue);
     // v4.30 placeholder 屬性翻譯（INPUT 只譯 placeholder、不碰 value）
     const inp = {
       nodeType: 1, tagName: 'INPUT', childNodes: [],
