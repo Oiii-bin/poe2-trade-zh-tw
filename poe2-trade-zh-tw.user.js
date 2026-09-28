@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.25
+// @version 4.26
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -843,6 +843,14 @@
     //   底層 explicit/implicit 同文本模板已存在於 TWMAP（GGG 官方 TW 翻譯），直接鏡像，零臆測。
     //   剩餘無 TW 來源者見 pending_tw_gaps.json。
     "fractured.stat_2954116742|24062": "配置不朽惡名",
+  });
+
+  Object.assign(TWMAP, {
+    // ✅ v4.26 詞綴缺口補譯（1 筆）：fractured 變體，底層 explicit.stat_3514984677 同文本模板
+    //   已存在於 TWMAP（GGG 官方 TW 翻譯「增加#%變動魔力詞綴的大小」），直接鏡像，零臆測。
+    //   來源：intl_stats.json 比對；EN 文本 fractured/explicit 皆為
+    //   "#% increased Explicit Mana Modifier magnitudes" → 同文本保證翻譯正確。
+    "fractured.stat_3514984677": "增加#%變動魔力詞綴的大小",
   });
 
 
@@ -2476,5 +2484,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.23：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.26：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
