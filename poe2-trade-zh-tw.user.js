@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.29
+// @version 4.30
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -24,6 +24,15 @@
 //    本地 dump 配對 Vaal Cultivation Orb->瓦爾栽培寶珠(栽培) / Omen of Sanctification->聖化之兆(聖化) / * Reload->*裝填；
 //    TWMAP 慣例 Fractured->破裂 / Desecrated->褻瀆 / Unrevealed->未揭露 / Crafted->工藝；武器類別 One-Handed/Two-Handed/Melee/Unarmed
 //    以組合詞覆蓋（單手劍/雙手斧/任意雙手近戰武器…）；其餘 UI 欄位 Damage->傷害、Chance->機率、Stack Size->堆疊數量 等通用術語。
+// ✅ v4.30 上架時間下拉 + placeholder 屬性翻譯（截圖 2026-09-28 回報）：
+//    「Up to an Hour Ago」等 9 個時間選項全漏翻 —— 權威來源＝臺服官方 /api/trade2/data/filters
+//    （indexed 欄位，免登入可抓）：Any Time->任何時間（原「任意時間」非官方用語，已對齊）、
+//    Up to an|3|12 Hours Ago->1|3|12 小時前、Up to a|3 Day(s) Ago->至多 1|3 天前、
+//    Up to a|2 Week(s) Ago->至多 1|2 個禮拜前、Up to 1|2 Month(s) Ago->至多 1|2 個月前；
+//    Collapse Listings by Account->透過帳號摺疊名單（官方）、Enter account name...->輸入帳號名稱...（官方為 ASCII 三點）。
+//    機制修復：walk() 原本整個跳過 INPUT/TEXTAREA（保護搜尋框 value 用英文查 API），導致 placeholder 屬性永遠翻不到
+//    → 改為「只譯 placeholder 屬性、不碰 value」，MutationObserver 補 attributes:true + attributeFilter。
+//    註：「Verified」徽章與結果列「...AGO」相對時間，臺服交易站需登入、無權威文案可證，依硬規則不臆測。
 // ✅ v3.6 Trade 篩選交易選項補譯（35 條）：站方 CSS 小型大寫顯示、DOM 實際為 Title Case（v3.5 MIN/MAX 未中即此因），
 //    本輪全數 Title Case + 全大寫雙保險。Buyout or Fixed Price->一口價或定價（全短語鍵蓋過舊 Buyout->購買）、
 //    Gold Fee->金幣費用 / Exalted Orb Equivalent->崇高石等值 / Collapse Listings by Account->依帳號摺疊上架 / Sale->販售。
@@ -1018,10 +1027,20 @@ const PROP = {
     // ✅ v3.6 Trade 篩選交易選項（Title Case + 全大寫雙保險；Seller/MIN/MAX 已存在不重登）
     "Seller Account": "賣家帳號", "SELLER ACCOUNT": "賣家帳號",
     "Account": "帳號", "ACCOUNT": "帳號",
-    "Enter Account Name...": "輸入帳號名稱…", "Enter account name...": "輸入帳號名稱…", "ENTER ACCOUNT NAME...": "輸入帳號名稱…",
-    "Collapse Listings by Account": "依帳號摺疊上架", "COLLAPSE LISTINGS BY ACCOUNT": "依帳號摺疊上架",
+    "Enter Account Name...": "輸入帳號名稱...", "Enter account name...": "輸入帳號名稱...", "ENTER ACCOUNT NAME...": "輸入帳號名稱...",
+    "Collapse Listings by Account": "透過帳號摺疊名單", "COLLAPSE LISTINGS BY ACCOUNT": "透過帳號摺疊名單",
     "Yes": "是", "YES": "是", "No": "否", "NO": "否",
-    "Any Time": "任意時間", "ANY TIME": "任意時間",
+    "Any Time": "任何時間", "ANY TIME": "任何時間",
+    // ✅ v4.30 上架時間選項（臺服官方 /api/trade2/data/filters indexed 欄位實證；大寫變體由 expandCaseVariants 自動生成）
+    "Up to an Hour Ago": "1 小時前",
+    "Up to 3 Hours Ago": "3 小時前",
+    "Up to 12 Hours Ago": "12 小時前",
+    "Up to a Day Ago": "至多 1 天前",
+    "Up to 3 Days Ago": "至多 3 天前",
+    "Up to a Week Ago": "至多 1 個禮拜前",
+    "Up to 2 Weeks Ago": "至多 2 個禮拜前",
+    "Up to 1 Month Ago": "至多 1 個月前",
+    "Up to 2 Months Ago": "至多 2 個月前",
     "Sale Type": "販售類型", "SALE TYPE": "販售類型", "Sale": "販售", "SALE": "販售",
     "Buyout or Fixed Price": "一口價或定價", "BUYOUT OR FIXED PRICE": "一口價或定價",
     "Gold Fee": "金幣費用", "GOLD FEE": "金幣費用", "Gold": "金幣", "GOLD": "金幣",
@@ -2016,7 +2035,22 @@ const PROP = {
       else maybeLogUntranslated(node, n);
     } else if (node.nodeType === 1) {
       const tg = node.tagName;
-      if (tg === 'INPUT' || tg === 'TEXTAREA') return;   // 不動搜尋框（API 用英文查詢）
+      if (tg === 'INPUT' || tg === 'TEXTAREA') {
+        // v4.30：placeholder 屬性也要翻（只譯屬性、不碰 value —— 搜尋框 value 需保持英文供 API 查詢）。
+        //   原本整個 return 導致「Enter account name...」等 placeholder 永遠漏翻。
+        if (node.getAttribute) {
+          const ph = node.getAttribute('placeholder');
+          if (ph) {
+            let n = trText(ph);
+            if (n === ph) {   // v4.18 同款懶惰回退：翻不出再試全大寫
+              const up = ph.toUpperCase();
+              if (up !== ph) { const nu = trText(up); if (nu !== up) n = nu; }
+            }
+            if (n !== ph) node.setAttribute('placeholder', n);
+          }
+        }
+        return;   // value 與子節點一律不動
+      }
       if (node.isContentEditable) return;
       for (const c of node.childNodes) walk(c);
     }
@@ -2028,12 +2062,16 @@ const PROP = {
         if (mu.type === 'characterData') {
           // React 常以 characterData 就地改寫文字節點，原回呼只走 addedNodes 會漏掉 → 此處補翻
           if (mu.target && mu.target.nodeType === 3) walk(mu.target);
+        } else if (mu.type === 'attributes') {
+          // v4.30：placeholder 屬性由 React 動態設值時走 attributes 變更 → 重走 target 翻譯。
+          //   walk 內只在譯文不同時才 setAttribute，故不會無限迴圈（第二次進來已無變更）。
+          if (mu.target && mu.target.nodeType === 1) walk(mu.target);
         } else {
           for (const n of mu.addedNodes) walk(n);
         }
       }
     })
-      .observe(document.documentElement, { childList: true, subtree: true, characterData: true });
+      .observe(document.documentElement, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['placeholder'] });
   }
 
   // ✅ v4.3 中文→英文查詢橋接：trade API 只認英文物品名（GGG 資料庫為英文索引），
@@ -2536,5 +2574,5 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  console.log('[POE2 Trade 繁中] 啟動 v4.29：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  console.log('[POE2 Trade 繁中] 啟動 v4.30：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
