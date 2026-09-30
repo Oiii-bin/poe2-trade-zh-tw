@@ -285,6 +285,7 @@ function parseUniqueNames(html, loc) {
 
   code = code.replace(/\/\/ @version [\d.]+/, '// @version ' + newVer);
   code = code.replace(/啟動 v[\d.]+/, '啟動 ' + tag);
+  code = code.replace(/window\.POE2ZH_VERSION = '[\d.]+'/, "window.POE2ZH_VERSION = '" + newVer + "'");
 
   // ---- 同步驗證器斷言（以實測值為準，禁手算）----
   let verifySrc = ORIG_VERIFY;
@@ -292,9 +293,10 @@ function parseUniqueNames(html, loc) {
     const c = runtimeCounts(code);
     console.log('實測啟動日誌：DICT=' + c.dict + ' / TWMAP=' + c.twmap);
     verifySrc = verifySrc.replace(/(DICT 數量=)\d+/, '$1' + c.dict);
-    verifySrc = verifySrc.replace(/m\[1\] === '\d+'/, "m[1] === '" + c.dict + "'");
+    verifySrc = verifySrc.replace(/m\[2\] === '\d+'/, "m[2] === '" + c.dict + "'");
     verifySrc = verifySrc.replace(/(TWMAP 數量=)\d+/, '$1' + c.twmap);
-    verifySrc = verifySrc.replace(/m\[2\] === '\d+'/, "m[2] === '" + c.twmap + "'");
+    verifySrc = verifySrc.replace(/m\[3\] === '\d+'/, "m[3] === '" + c.twmap + "'");
+    verifySrc = verifySrc.replace(/POE2ZH_VERSION === '[\d.]+'/, "POE2ZH_VERSION === '" + newVer + "'");
   }
 
   // ---- 驗證：不過就還原，絕不提交壞檔 ----

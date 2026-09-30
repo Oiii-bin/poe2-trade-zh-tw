@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.32
+// @version 4.33
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -890,6 +890,14 @@
     //   底層 explicit/implicit 同文本模板已存在於 TWMAP，直接鏡像，零臆測。
     "crafted.stat_4259875040": "增加#%法術所造成之穿刺的幅度",
   });
+
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.33 詞綴自動同步（2 筆）
+    //   來源：pathofexile.tw /api/trade2/data/stats，stat id 對齊，臺服權威譯名，零臆測。
+    "explicit.stat_3206904707": "增加#%變動冰冷詞綴的大小",
+    "rune.stat_119336587": "鬥旗同時賦予被其影響的目標#%每秒生命回復",
+  });
+
 
 
 
@@ -2594,6 +2602,6 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  window.POE2ZH_VERSION = '4.32';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
-  console.log('[POE2 Trade 繁中] 啟動 v4.32：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  window.POE2ZH_VERSION = '4.33';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
+  console.log('[POE2 Trade 繁中] 啟動 v4.33：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
