@@ -104,7 +104,7 @@ const HDR_VER = (code.match(/@version ([\d.]+)/) || [])[1];
 check('啟動日誌版本號 = header @version（防人工 bump 漏改日誌）', m && m[1] === HDR_VER, 'log=' + (m && m[1]) + ' header=' + HDR_VER);
 check('DICT 數量=7059 (v4.30 +9 上架時間選項、v4.31 +10 聯盟名/最後通牒篩選，各 ×Title/大寫雙鍵；以啟動日誌實測值為準、禁手算)', m && m[2] === '7059', m ? 'DICT=' + m[2] : '未解析');
 check('TWMAP 數量=7360 (v4.21 +175 筆 + v4.22 +528 筆 = 703 筆 fractured/crafted/enchant/rune/desecrated 變體鏡像；v4.24 週同步 +12 筆；v4.26 +1 筆安全鏡像；以啟動日誌實測值為準、禁手算)', m && m[3] === '7360', m ? 'TWMAP=' + m[3] : '未解析');
-check('診斷標記 window.POE2ZH_VERSION 已設定（Console 打 POE2ZH_VERSION 可知腳本活著）', sandbox.POE2ZH_VERSION === '4.36', 'got=' + sandbox.POE2ZH_VERSION);
+check('診斷標記 window.POE2ZH_VERSION 已設定（Console 打 POE2ZH_VERSION 可知腳本活著）', sandbox.POE2ZH_VERSION === '4.37', 'got=' + sandbox.POE2ZH_VERSION);
 
 // (3) 詞綴資料層攔截改寫
 (async () => {
