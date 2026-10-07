@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.40
+// @version 4.41
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -904,6 +904,13 @@
     "fractured.stat_3206904707": "增加#%變動冰冷詞綴的大小",
     "desecrated.stat_3206904707": "增加#%變動冰冷詞綴的大小",
   });
+
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.41 變體詞綴安全鏡像（1 筆）
+    //   底層 explicit/implicit 同文本模板已存在於 TWMAP，直接鏡像，零臆測。
+    "fractured.stat_731781020": "藥劑每秒獲得#充能",
+  });
+
 
 
 
@@ -2610,6 +2617,6 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  window.POE2ZH_VERSION = '4.40';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
-  console.log('[POE2 Trade 繁中] 啟動 v4.40：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  window.POE2ZH_VERSION = '4.41';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
+  console.log('[POE2 Trade 繁中] 啟動 v4.41：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
