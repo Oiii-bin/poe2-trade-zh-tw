@@ -231,7 +231,7 @@ function parseUniqueNames(html, loc) {
   console.log('  傳奇名(poe2db)    ' + newUnique.length + ' 筆');
 
   // 天花板缺口（GGG 有、臺服沒翻 → 不臆測）
-  const gapIds = Object.keys(EN_STATS).filter((id) => !TW_STATS[id] && !TWMAP[id]);
+  const gapIds = Object.keys(EN_STATS).filter((id) => !TW_STATS[id] && !TWMAP[id]).sort();
   let prevGap = { items: [] };
   try { prevGap = JSON.parse(fs.readFileSync(GAPS, 'utf8')); } catch (e) {}
   const gapChanged = JSON.stringify(prevGap.items) !== JSON.stringify(gapIds);
