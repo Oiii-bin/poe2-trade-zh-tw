@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.46
+// @version 4.47
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -916,6 +916,13 @@
     //   來源：pathofexile.tw /api/trade2/data/stats，stat id 對齊，臺服權威譯名，零臆測。
     "rune.stat_841463428": "命定: 增加#%你所施加之流血的幅度",
   });
+
+  Object.assign(TWMAP, {
+    // 🤖 AUTO v4.47 詞綴自動同步（1 筆）
+    //   來源：pathofexile.tw /api/trade2/data/stats，stat id 對齊，臺服權威譯名，零臆測。
+    "rune.stat_776287420": "#全部捷光環技能寶石等級",
+  });
+
 
 
 
@@ -2624,6 +2631,6 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  window.POE2ZH_VERSION = '4.46';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
-  console.log('[POE2 Trade 繁中] 啟動 v4.46：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  window.POE2ZH_VERSION = '4.47';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
+  console.log('[POE2 Trade 繁中] 啟動 v4.47：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();
