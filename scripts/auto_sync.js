@@ -11,21 +11,26 @@
 //   4. 傳奇名：poe2db.tw 英文版 /us/Unique_item + 臺服 /tw/Unique_item → 靠 slug 配對
 //      （官方端點抓不到傳奇：無 /data/uniques，/data/items 只有基底類型）
 //   5. 變體詞綴安全鏡像：底層 explicit/implicit 模板已存在且 EN 文本相同
+//   6. 篩選介面：GGG EN /data/filters + 臺服 TW /data/filters → 逐節點結構對齊，僅補整串鍵
+//   7. 聯盟：/data/leagues 只偵測新聯盟並寫入 pending_league_gaps.json，不自動翻譯
 //
 // 硬規則：
 //   - 不臆測。沒有權威譯名的一律不補，只寫入 pending_tw_gaps.json。
 //   - ⚠ /data/items 的 entry 沒有 id 且 EN/TW 數量不等 → 只能用 group label，絕不做 entry 索引配對。
-//   - 官方來源抓不到 → exit 1（讓 GitHub 寄信告警，避免綠燈空轉）；
+//   - 核心官方來源抓不到 → exit 1（讓 GitHub 寄信告警，避免綠燈空轉）；
+//     filters / leagues 為附加監控，抓不到只警告、不阻斷核心同步（避免新功能拖垮每日同步）。
 //     poe2db 為社群來源，抓不到只警告、不阻擋。
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const { execFileSync } = require('child_process');
+const { collectFilterPairs, detectNewLeagues, FILTER_SKIP, loadFullDict } = require('./filters_leagues');
 
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'poe2-trade-zh-tw.user.js');
 const VERIFIER = path.join(ROOT, 'verify_run.js');
 const GAPS = path.join(ROOT, 'pending_tw_gaps.json');
+const LEAGUE_GAPS = path.join(ROOT, 'pending_league_gaps.json');
 const ORIG = fs.readFileSync(SCRIPT, 'utf8');
 const ORIG_VERIFY = fs.existsSync(VERIFIER) ? fs.readFileSync(VERIFIER, 'utf8') : null;
 
@@ -140,6 +145,7 @@ function parseUniqueNames(html, loc) {
   console.log('=== POE2 繁中腳本 雲端自動同步 ===');
   const TWMAP = parseFull('TWMAP');
   const DICT = parseFull('DICT');
+  const FULL_DICT = loadFullDict(ORIG);
   console.log('現有完整 TWMAP: ' + Object.keys(TWMAP).length + ' / DICT: ' + Object.keys(DICT).length);
 
   let enStats, twStats, enStatic, twStatic, enItems, twItems;
@@ -157,6 +163,48 @@ function parseUniqueNames(html, loc) {
     // 官方來源抓不到 = 真的出事了（GGG 可能開始封鎖 CI IP）→ 轉紅告警，不可靜默略過
     console.error('❌ 官方來源取得失敗：' + e.message);
     process.exit(1);
+  }
+
+  // (6)(7) 附加監控：filters / leagues（失敗不阻斷核心同步）
+  let enFilters = null, twFilters = null, enLeagues = null, twLeagues = null;
+  try {
+    [enFilters, twFilters, enLeagues, twLeagues] = await Promise.all([
+      getJSON('https://www.pathofexile.com/api/trade2/data/filters'),
+      getJSON('https://www.pathofexile.tw/api/trade2/data/filters'),
+      getJSON('https://www.pathofexile.com/api/trade2/data/leagues'),
+      getJSON('https://www.pathofexile.tw/api/trade2/data/leagues'),
+    ]);
+  } catch (e) {
+    console.log('⚠ filters/leagues 取得失敗（附加監控，不阻斷）：' + e.message);
+  }
+
+  let newFilter = [], leagueInfo = { missing: [], aligned: true, total: 0 };
+  if (enFilters && twFilters) {
+    const fp = collectFilterPairs(enFilters, twFilters);
+    if (fp.issues.length) {
+      console.log('⚠ filters 雙語結構不一致，跳過（不臆測）：' + fp.issues.slice(0, 3).join('; '));
+    } else {
+      const seenF = new Set();
+      let variantDiff = 0, skippedF = 0;
+      for (const [en, tw] of fp.pairs) {
+        if (seenF.has(en)) continue;
+        if (FILTER_SKIP.has(en)) { skippedF++; continue; }  // 已知衝突：既有組合譯法受驗證器鎖定，不覆蓋
+        const existing = FULL_DICT[en] || FULL_DICT[en.toUpperCase()];
+        // 已收錄但譯法與臺服不同 → 不自動覆蓋（避免改壞既有譯法），只計數回報
+        if (existing) { if (existing !== tw) variantDiff++; continue; }
+        seenF.add(en);
+        newFilter.push([en, tw]);
+      }
+      console.log('  篩選介面 filters：text ' + fp.total + ' / 需補整串鍵 ' + newFilter.length
+        + ' 筆 / 既有譯法不同不覆蓋 ' + variantDiff + ' 筆 / 已知衝突跳過 ' + skippedF + ' 筆');
+    }
+  }
+  if (enLeagues && twLeagues) {
+    leagueInfo = detectNewLeagues(FULL_DICT, enLeagues, twLeagues);
+    if (leagueInfo.missing.length) {
+      console.log('  ⚠ 新聯盟未收錄 ' + leagueInfo.missing.length + ' 筆 → pending_league_gaps.json（不自動翻譯）');
+      leagueInfo.missing.forEach((x) => console.log('     ' + x.en + ' （臺服順序對照：' + (x.tw_hint || '?') + '）'));
+    }
   }
 
   const flat = (j) => { const o = {}; for (const g of j.result || []) for (const e of g.entries || []) if (e.id && e.text) o[e.id] = e.text; return o; };
@@ -229,6 +277,8 @@ function parseUniqueNames(html, loc) {
   console.log('  物品名(static)    ' + newItem.length + ' 筆');
   console.log('  分類標籤(group)   ' + newLabel.length + ' 筆');
   console.log('  傳奇名(poe2db)    ' + newUnique.length + ' 筆');
+  console.log('  篩選介面(filters) ' + newFilter.length + ' 筆');
+  console.log('  新聯盟(僅偵測)    ' + leagueInfo.missing.length + ' 筆');
 
   // 天花板缺口（GGG 有、臺服沒翻 → 不臆測）
   const gapIds = Object.keys(EN_STATS).filter((id) => !TW_STATS[id] && !TWMAP[id]).sort();
@@ -240,8 +290,20 @@ function parseUniqueNames(html, loc) {
     console.log('  天花板缺口(臺服未翻，不補) ' + gapIds.length + ' 筆 → pending_tw_gaps.json 已更新');
   }
 
-  const total = newAffix.length + mirrored.length + newItem.length + newLabel.length + newUnique.length;
-  if (total === 0 && !gapChanged) {
+  let leagueChanged = false;
+  if (enLeagues && twLeagues) {
+    const prev = (() => { try { return JSON.parse(fs.readFileSync(LEAGUE_GAPS, 'utf8')); } catch (e) { return { items: [] }; } })();
+    if (JSON.stringify(prev.items || []) !== JSON.stringify(leagueInfo.missing)) {
+      fs.writeFileSync(LEAGUE_GAPS, JSON.stringify({
+        updated: new Date().toISOString(), count: leagueInfo.missing.length,
+        items: leagueInfo.missing, note: '僅偵測，不自動翻譯；配對需人工以權威來源確認',
+      }, null, 2));
+      leagueChanged = true;
+    }
+  }
+
+  const total = newAffix.length + mirrored.length + newItem.length + newLabel.length + newUnique.length + newFilter.length;
+  if (total === 0 && !gapChanged && !leagueChanged) {
     console.log('✅ 沒有可補的新內容，結束（不產生 commit）');
     process.exit(0);
   }
@@ -281,6 +343,13 @@ function parseUniqueNames(html, loc) {
       '// 🤖 AUTO ' + tag + ' 傳奇名自動同步（' + newUnique.length + ' 筆）\n' +
       '//   來源：poe2db.tw /us/Unique_item 與 /tw/Unique_item，靠 slug 配對（官方端點無傳奇資料）。',
       newUnique));
+  }
+
+  if (newFilter.length) {
+    code = injectAfterLastAssign(code, 'DICT', blockFor('DICT',
+      '// 🤖 AUTO ' + tag + ' 篩選介面官方文案自動同步（' + newFilter.length + ' 筆）\n' +
+      '//   來源：GGG EN /data/filters 與臺服 TW /data/filters 逐節點結構對齊，臺服 text 為權威譯名，零臆測。',
+      newFilter));
   }
 
   code = code.replace(/\/\/ @version [\d.]+/, '// @version ' + newVer);

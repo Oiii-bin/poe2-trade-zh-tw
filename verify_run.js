@@ -102,9 +102,9 @@ check('印出啟動日誌', !!startLog, startLog || '缺少啟動日誌');
 const m = startLog && startLog.match(/啟動 v([\d.]+)：物品對照 (\d+) 條 \/ 詞綴 TW 資料 (\d+) 筆/);
 const HDR_VER = (code.match(/@version ([\d.]+)/) || [])[1];
 check('啟動日誌版本號 = header @version（防人工 bump 漏改日誌）', m && m[1] === HDR_VER, 'log=' + (m && m[1]) + ' header=' + HDR_VER);
-check('DICT 數量=7059 (v4.30 +9 上架時間選項、v4.31 +10 聯盟名/最後通牒篩選，各 ×Title/大寫雙鍵；以啟動日誌實測值為準、禁手算)', m && m[2] === '7059', m ? 'DICT=' + m[2] : '未解析');
+check('DICT 數量=7113 (v4.30 +9 上架時間選項、v4.31 +10 聯盟名/最後通牒篩選，各 ×Title/大寫雙鍵；以啟動日誌實測值為準、禁手算)', m && m[2] === '7113', m ? 'DICT=' + m[2] : '未解析');
 check('TWMAP 數量=7363 (v4.21 +175 筆 + v4.22 +528 筆 = 703 筆 fractured/crafted/enchant/rune/desecrated 變體鏡像；v4.24 週同步 +12 筆；v4.26 +1 筆安全鏡像；以啟動日誌實測值為準、禁手算)', m && m[3] === '7363', m ? 'TWMAP=' + m[3] : '未解析');
-check('診斷標記 window.POE2ZH_VERSION 已設定（Console 打 POE2ZH_VERSION 可知腳本活著）', sandbox.POE2ZH_VERSION === '4.53', 'got=' + sandbox.POE2ZH_VERSION);
+check('診斷標記 window.POE2ZH_VERSION 已設定（Console 打 POE2ZH_VERSION 可知腳本活著）', sandbox.POE2ZH_VERSION === '4.54', 'got=' + sandbox.POE2ZH_VERSION);
 
 // (3) 詞綴資料層攔截改寫
 (async () => {
@@ -477,6 +477,17 @@ check('診斷標記 window.POE2ZH_VERSION 已設定（Console 打 POE2ZH_VERSION
     check('v4.11 預設: 沙箱無 body 時建面板回傳 false', dbgP.buildPresetPanel() === false, 'got=' + dbgP.buildPresetPanel());
   } else {
     check('v4.11 預設: 除錯匯出就緒', false, '__POE2DBG.presetSave 不存在');
+  }
+
+  // v4.54 回歸：filters UI 27 條官方文案（Title Case + 全大寫）
+  {
+    const fp = [["Instant Buyout and In Person", "即刻購買以及面對面交易"], ["Instant Buyout", "即刻購買"], ["In Person (Online in League)", "面對面交易(聯盟在線)"], ["In Person (Online)", "面對面交易(在線)"], ["Item Category", "道具分類"], ["Any One-Handed Melee Weapon", "任何單手近戰武器"], ["Any Flask", "任何藥劑"], ["Any Non-Unique", "非傳奇道具"], ["Item Quality", "道具品質"], ["Critical Chance", "暴擊機率"], ["Augmentable Sockets", "可增幅插槽"], ["Total Augment Sockets", "總增幅插槽"], ["Waystone Tier", "換界石階級"], ["Waystone Packsize", "換界石怪物群大小"], ["Waystone IIR", "換界石物品稀有度"], ["Monster Rarity", "怪物稀有度"], ["Waystone Revives", "換界石復活次數"], ["Waystone Gold", "換界石金幣數量"], ["Waystone Experience", "換界石經驗值獲取"], ["Gem Level", "寶石等級"], ["Gem Sockets", "寶石插槽"], ["Barya Sacred Water", "巨靈之幣神聖之水"], ["Unidentified Tier", "未鑑定階級"], ["Price with Note", "標價："], ["No Listed Price", "無定價"], ["Buyout Price", "直購價"], ["Exalted or Divine Orbs", "崇高石或神聖石"]];
+    const a = fp.map(p => textNode(p[0]));
+    const b = fp.map(p => textNode(p[0].toUpperCase()));
+    moCallback([{ addedNodes: a.concat(b) }]);
+    const bad = fp.filter((p, i) => a[i].nodeValue !== p[1] || b[i].nodeValue !== p[1]);
+    check('v4.54 filters UI 27 條官方文案全數對齊（含全大寫）', bad.length === 0,
+      bad.length ? bad.map(p => p[0]).join(' | ') : '27/27 OK');
   }
 
   // 輸出

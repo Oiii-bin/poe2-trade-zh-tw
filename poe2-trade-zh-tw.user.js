@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         POE2 Trade 繁體中文化（自製完整版 v3）
 // @namespace    http://tampermonkey.net/
-// @version 4.53
+// @version 4.54
 // @description  POE2 國際服市集繁體中文化 — 物品/傳奇/介面(文字替換) + 詞綴(攔截 api/trade2/data 回傳,內嵌 TW 資料) 全繁中
 // @author       Oiii-bin
 // @match        https://www.pathofexile.com/trade2*
@@ -2020,6 +2020,39 @@ const PROP = {
 
 
 
+  Object.assign(DICT, {
+    // 🤖 v4.54 篩選介面官方文案對齊（27 條 × Title Case；大寫變體由 expandCaseVariants 自動展開）
+    //   來源：pathofexile.com /api/trade2/data/filters 與 pathofexile.tw 同端點，逐節點結構對齊。
+    //   臺服官方 text 為權威譯名，零臆測；長串鍵依 KEYS 長度降序優先命中，修復中英混雜。
+    "Instant Buyout and In Person": "即刻購買以及面對面交易",
+    "Instant Buyout": "即刻購買",
+    "In Person (Online in League)": "面對面交易(聯盟在線)",
+    "In Person (Online)": "面對面交易(在線)",
+    "Item Category": "道具分類",
+    "Any One-Handed Melee Weapon": "任何單手近戰武器",
+    "Any Flask": "任何藥劑",
+    "Any Non-Unique": "非傳奇道具",
+    "Item Quality": "道具品質",
+    "Critical Chance": "暴擊機率",
+    "Augmentable Sockets": "可增幅插槽",
+    "Total Augment Sockets": "總增幅插槽",
+    "Waystone Tier": "換界石階級",
+    "Waystone Packsize": "換界石怪物群大小",
+    "Waystone IIR": "換界石物品稀有度",
+    "Monster Rarity": "怪物稀有度",
+    "Waystone Revives": "換界石復活次數",
+    "Waystone Gold": "換界石金幣數量",
+    "Waystone Experience": "換界石經驗值獲取",
+    "Gem Level": "寶石等級",
+    "Gem Sockets": "寶石插槽",
+    "Barya Sacred Water": "巨靈之幣神聖之水",
+    "Unidentified Tier": "未鑑定階級",
+    "Price with Note": "標價：",
+    "No Listed Price": "無定價",
+    "Buyout Price": "直購價",
+    "Exalted or Divine Orbs": "崇高石或神聖石",
+  });
+
   (function expandCaseVariants() {
     const add = {};
     for (const k in DICT) {
@@ -2631,6 +2664,6 @@ const PROP = {
   hookData();
   initPresetUI();
 
-  window.POE2ZH_VERSION = '4.53';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
-  console.log('[POE2 Trade 繁中] 啟動 v4.53：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
+  window.POE2ZH_VERSION = '4.54';   // 診斷用：Console 打 POE2ZH_VERSION 即可知腳本有無跑起來（TM 未注入則 undefined）
+  console.log('[POE2 Trade 繁中] 啟動 v4.54：物品對照 ' + KEYS.length + ' 條 / 詞綴 TW 資料 ' + Object.keys(TWMAP).length + ' 筆（已啟用資料層物品漢化）');
 })();

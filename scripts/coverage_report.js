@@ -4,6 +4,7 @@
 // 在 CI 會讀 GITHUB_TOKEN / GITHUB_REPOSITORY 自動開 Issue；本機跑則只寫 coverage_report.md。
 const fs = require('fs');
 const path = require('path');
+const { collectFilterPairs, detectNewLeagues, FILTER_SKIP, loadFullDict } = require('./filters_leagues');
 
 const ROOT = path.resolve(__dirname, '..');
 const SCRIPT = path.join(ROOT, 'poe2-trade-zh-tw.user.js');
@@ -51,8 +52,26 @@ function parseUniqueNames(html, loc) {
 
 (async () => {
   const TWMAP = parseFull('TWMAP');
-  const DICT = parseFull('DICT');
+  const DICT = loadFullDict(code);
   const version = (code.match(/\/\/ @version ([\d.]+)/) || [])[1] || '?';
+
+  const [enFilters, twFilters, enLeagues, twLeagues] = await Promise.all([
+    getJSON('https://www.pathofexile.com/api/trade2/data/filters'),
+    getJSON('https://www.pathofexile.tw/api/trade2/data/filters'),
+    getJSON('https://www.pathofexile.com/api/trade2/data/leagues'),
+    getJSON('https://www.pathofexile.tw/api/trade2/data/leagues'),
+  ]);
+  let fTotal = 0, fPairs = 0, fCovered = 0, fIssues = 0, fSkipped = 0, lMissing = 0, lTotal = 0;
+  if (enFilters && twFilters) {
+    const fp = collectFilterPairs(enFilters, twFilters);
+    fTotal = fp.total; fPairs = fp.pairs.length; fIssues = fp.issues.length;
+    fSkipped = fp.pairs.filter(([en]) => FILTER_SKIP.has(en)).length;
+    fCovered = fp.pairs.filter(([en]) => DICT[en] || DICT[en.toUpperCase()] || FILTER_SKIP.has(en)).length;
+  }
+  if (enLeagues && twLeagues) {
+    const li = detectNewLeagues(DICT, enLeagues, twLeagues);
+    lTotal = li.total; lMissing = li.missing.length;
+  }
 
   const enStats = await getJSON('https://www.pathofexile.com/api/trade2/data/stats');
   const twStats = await getJSON('https://www.pathofexile.tw/api/trade2/data/stats');
@@ -93,6 +112,20 @@ function parseUniqueNames(html, loc) {
     '## 傳奇（poe2db 對照）',
     '',
     (uniTotal ? '| 項目 | 數量 |\n|---|---|\n| 可配對傳奇總數 | ' + uniTotal + ' |\n| 已收錄譯名 | ' + uniCovered + '（' + ((uniCovered / uniTotal) * 100).toFixed(1) + '%） |\n| 待補 | ' + (uniTotal - uniCovered) + ' |' : '（poe2db 本次取不到，略過）'),
+    '',
+    '## 篩選介面 / 聯盟（filters / leagues）',
+    '',
+    '| 項目 | 數量 |',
+    '|---|---|',
+    '| filters 雙語 text 節點 / 去重後可配對文案 | ' + (fTotal || '取不到') + ' / ' + (fPairs || '取不到') + ' |',
+    '| 已收錄整串鍵（含刻意跳過） | ' + fCovered + ' |',
+    '| 待補整串鍵 | ' + (fPairs ? Math.max(0, fPairs - fCovered) : '取不到') + ' |',
+    '| 已知衝突刻意跳過 | ' + fSkipped + ' |',
+    '| 結構不一致（跳過不臆測） | ' + fIssues + ' |',
+    '| 國際服聯盟總數 / 未收錄 | ' + lTotal + ' / ' + lMissing + ' |',
+    '',
+    '> 聯盟名無共通 id 可對齊，僅偵測不自動翻譯（依專案硬規則）。',
+    '> `Unique (Foil)` 為已知衝突：臺服寫「傳奇 (貼模)」，腳本既有組合譯法「傳奇 (鍍膜)」受驗證器鎖定，刻意不覆蓋。',
     '',
     '## 物品 / 介面（DICT）',
     '',
